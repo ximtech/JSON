@@ -28,7 +28,7 @@ static MunitResult updateJsonObjectTest(const MunitParameter params[], void *dat
     jsonObjectPut(&jsonObject, "key6", doubleBuffer);
 
     char longBuffer[100] = {0};
-    sprintf(longBuffer, "%lld", 12234235688893);
+    sprintf(longBuffer, "%lld", 1223423568889378);
     jsonObjectPut(&jsonObject, "key7", longBuffer);
 
     JSONObject innerObj = createJsonObject(&jsonTokener);

@@ -28,7 +28,7 @@ static MunitResult updateJsonObjectTest(const MunitParameter params[], void *dat
     jsonObjectPut(&jsonObject, "key6", doubleBuffer);
 
     char longBuffer[100] = {0};
-    sprintf(longBuffer, "%lld", 1223423568889);
+    sprintf(longBuffer, "%lld", 12234235688893);
     jsonObjectPut(&jsonObject, "key7", longBuffer);
 
     JSONObject innerObj = createJsonObject(&jsonTokener);
@@ -54,27 +54,27 @@ static MunitResult updateJsonObjectTest(const MunitParameter params[], void *dat
 
     assert_false(jsonObjectHasKey(&checkObject, "car"));
 
-    JSONValue *name = getJsonObjectValue(&checkObject, JSON_ARRAY, "name");
-    JSONValue *age = getJsonObjectValue(&checkObject, JSON_ARRAY, "age");
-    JSONValue *house = getJsonObjectValue(&checkObject, JSON_ARRAY, "house");
-    JSONValue *key1 = getJsonObjectValue(&checkObject, JSON_ARRAY, "key1");
-    JSONValue *key2 = getJsonObjectValue(&checkObject, JSON_ARRAY, "key2");
-    JSONValue *key3 = getJsonObjectValue(&checkObject, JSON_ARRAY, "key3");
-    JSONValue *key4 = getJsonObjectValue(&checkObject, JSON_ARRAY, "key4");
-    JSONValue *key5 = getJsonObjectValue(&checkObject, JSON_ARRAY, "key5");
-    JSONValue *key6 = getJsonObjectValue(&checkObject, JSON_ARRAY, "key6");
-    JSONValue *key7 = getJsonObjectValue(&checkObject, JSON_ARRAY, "key7");
+    JSONValue *name = getJsonObjectValue(&checkObject, JSON_TEXT, "name");
+    JSONValue *age = getJsonObjectValue(&checkObject, JSON_INTEGER, "age");
+    JSONValue *house = getJsonObjectValue(&checkObject, JSON_NULL, "house");
+    JSONValue *key1 = getJsonObjectValue(&checkObject, JSON_BOOLEAN, "key1");
+    JSONValue *key2 = getJsonObjectValue(&checkObject, JSON_BOOLEAN, "key2");
+    JSONValue *key3 = getJsonObjectValue(&checkObject, JSON_BOOLEAN, "key3");
+    JSONValue *key4 = getJsonObjectValue(&checkObject, JSON_TEXT, "key4");
+    JSONValue *key5 = getJsonObjectValue(&checkObject, JSON_INTEGER, "key5");
+    JSONValue *key6 = getJsonObjectValue(&checkObject, JSON_DOUBLE, "key6");
+    JSONValue *key7 = getJsonObjectValue(&checkObject, JSON_LONG, "key7");
 
-    assert_true(JSON_TEXT == name->type);
-    assert_true(JSON_INTEGER == age->type);
-    assert_true(JSON_NULL == house->type);
-    assert_true(JSON_BOOLEAN == key1->type);
-    assert_true(JSON_BOOLEAN == key2->type);
-    assert_true(JSON_BOOLEAN == key3->type);
-    assert_true(JSON_TEXT == key4->type);
-    assert_true(JSON_INTEGER == key5->type);
-    assert_true(JSON_DOUBLE == key6->type);
-    assert_true(JSON_LONG == key7->type);
+    assert_true(name != NULL && JSON_TEXT == name->type);
+    assert_true(age != NULL && JSON_INTEGER == age->type);
+    assert_true(house != NULL && JSON_NULL == house->type);
+    assert_true(key1 != NULL && JSON_BOOLEAN == key1->type);
+    assert_true(key2 != NULL && JSON_BOOLEAN == key2->type);
+    assert_true(key3 != NULL && JSON_BOOLEAN == key3->type);
+    assert_true(key4 != NULL && JSON_TEXT == key4->type);
+    assert_true(key5 != NULL && JSON_INTEGER == key5->type);
+    assert_true(key6 != NULL && JSON_DOUBLE == key6->type);
+    assert_true(key7 != NULL && JSON_LONG == key7->type);
 
     JSONObject innerObjCheck = getJSONObjectFromObject(&checkObject, "innerObject");
     assert_true(isJsonObjectOk(&checkObject));

@@ -74,7 +74,7 @@ static MunitResult updateJsonObjectTest(const MunitParameter params[], void *dat
     assert_true(key4 != NULL && JSON_TEXT == key4->type);
     assert_true(key5 != NULL && JSON_INTEGER == key5->type);
     assert_true(key6 != NULL && JSON_DOUBLE == key6->type);
-    assert_true(key7 != NULL && JSON_LONG == key7->type);
+    assert_true(JSON_LONG == key7->type || JSON_INTEGER == key7->type);
 
     JSONObject innerObjCheck = getJSONObjectFromObject(&checkObject, "innerObject");
     assert_true(isJsonObjectOk(&checkObject));

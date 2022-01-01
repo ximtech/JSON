@@ -1,5 +1,7 @@
 # JSON
 
+[![tests](https://github.com/ximtech/JSON/actions/workflows/cmake-ci.yml/badge.svg)](https://github.com/ximtech/JSON/actions/workflows/cmake-ci.yml)
+
 Full feature library for parsing, editing and creating JSON strings. Written in C and suitable for embedded system.
 User-friendly interface and high level functions, provide easy manipulating with JSON.
 

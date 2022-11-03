@@ -22,9 +22,6 @@
 #define JSON_NEXT_VALUE_SEMICOLON_CHAR   ';'
 
 
-static const char ESCAPED_CHAR_ARRAY[255] = {
-        [','] = 1, [':'] = 2, [']'] = 3, ['}'] = 4, ['/'] = 5, ['"'] = 6, ['['] = 7, ['{'] = 8, [';'] = 9, ['='] = 10, ['#'] = 11, ['\\'] = 12,};
-
 static char nextJsonChar(JSONTokener *jsonTokener);
 static void backJsonChar(JSONTokener *jsonTokener);
 static char nextCleanJsonChar(JSONTokener *jsonTokener);
@@ -33,9 +30,10 @@ static char *nextJsonKey(JSONTokener *jsonTokener);
 static JSONValue *nextJsonValue(JSONTokener *jsonTokener);
 static char *nextJsonString(JSONTokener *jsonTokener);
 
-static inline void skipJsonChars(JSONTokener *jsonTokener);
-static inline void skipJsonMultiLineCommentChars(JSONTokener *jsonTokener);
+static void skipJsonChars(JSONTokener *jsonTokener);
+static void skipJsonMultiLineCommentChars(JSONTokener *jsonTokener);
 static JSONValue *handleUnquotedText(JSONTokener *jsonTokener);
+static inline bool isNotEscapedCharArray(char jsonChar);
 static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength);
 static JSONValue *getValueInstance(JSONTokener *jsonTokener, JSONType type, void *value);
 
@@ -91,17 +89,22 @@ JSONTokener getJSONTokener(char *jsonString, uint32_t stringLength) {
 
 JSONObject jsonObjectParse(JSONTokener *jsonTokener) {
     JSONObject jsonObject = {.jsonMap = NULL, .jsonTokener = jsonTokener};
-    if (jsonTokener == NULL ||
-        jsonTokener->jsonBufferPointer == NULL ||
-        jsonTokener->jsonStringLength < JSON_TEXT_MIN_LENGTH) {
+
+    if (jsonTokener == NULL || jsonTokener->jsonBufferPointer == NULL) {
+        return jsonObject;
+    }
+
+    if (jsonTokener->jsonStringLength < JSON_TEXT_MIN_LENGTH) {
         jsonTokener->jsonStatus = JSON_ERROR_EMPTY_TEXT;
         return jsonObject;
+    }
 
-    } else if (nextCleanJsonChar(jsonTokener) != JSON_OBJECT_BEGIN_CHAR) {
+    if (nextCleanJsonChar(jsonTokener) != JSON_OBJECT_BEGIN_CHAR) {
         jsonTokener->jsonStatus = JSON_ERROR_MISSING_START_PARENTHESIS;
         return jsonObject;
+    }
 
-    } else if (jsonTokener->jsonStatus != JSON_OK) {
+    if (jsonTokener->jsonStatus != JSON_OK) {
         return jsonObject;
     }
 
@@ -654,14 +657,14 @@ static char *nextJsonString(JSONTokener *jsonTokener) {
     }
 }
 
-static inline void skipJsonChars(JSONTokener *jsonTokener) {
+static void skipJsonChars(JSONTokener *jsonTokener) {
     char jsonChar;
     do {
         jsonChar = nextJsonChar(jsonTokener);
     } while (jsonChar != '\n' && jsonChar != '\r' && jsonChar != JSON_NULL_CHAR);
 }
 
-static inline void skipJsonMultiLineCommentChars(JSONTokener *jsonTokener) {
+static void skipJsonMultiLineCommentChars(JSONTokener *jsonTokener) {
     while (true) {
         char jsonChar = nextJsonChar(jsonTokener);
         if (jsonChar == JSON_NULL_CHAR) {
@@ -683,7 +686,7 @@ static JSONValue *handleUnquotedText(JSONTokener *jsonTokener) {
 
     uint32_t valueLength = 0;
     char jsonChar = *jsonTokener->jsonStringEnd;
-    while (jsonChar >= ' ' && ESCAPED_CHAR_ARRAY[jsonChar] == 0) { // Accumulate characters until reach the end of the text or a formatting character.
+    while (jsonChar >= ' ' && isNotEscapedCharArray(jsonChar)) { // Accumulate characters until reach the end of the text or a formatting character.
         jsonChar = nextJsonChar(jsonTokener);
         valueLength++;
     }
@@ -700,6 +703,26 @@ static JSONValue *handleUnquotedText(JSONTokener *jsonTokener) {
 
     JSONType jsonType = detectJsonValueType(jsonTextValue, valueLength);
     return getValueInstance(jsonTokener, jsonType, jsonTextValue);
+}
+
+static inline bool isNotEscapedCharArray(char jsonChar) {
+    switch (jsonChar) {
+        case ',':
+        case ':':
+        case ']':
+        case '}':
+        case '/':
+        case '"':
+        case '[':
+        case '{':
+        case ';':
+        case '=':
+        case '#':
+        case '\\':
+            return false;
+        default:
+            return true;
+    }
 }
 
 static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength) {

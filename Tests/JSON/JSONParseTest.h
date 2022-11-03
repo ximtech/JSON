@@ -79,6 +79,11 @@ static const char *const testJsonOpt =
 
 static MunitResult emptyJsonTest(const MunitParameter params[], void *data) {
     {
+        JSONObject jsonObject = jsonObjectParse(NULL);
+        assert_null(jsonObject.jsonMap);
+        assert_null(jsonObject.jsonTokener);
+    }
+    {
         char jsonBuffer[20] = {0};
         strcpy(jsonBuffer, "{}");
         JSONTokener jsonTokener = getJSONTokener(jsonBuffer, strlen(jsonBuffer));
@@ -173,7 +178,7 @@ static MunitResult primitiveValueJsonTest(const MunitParameter params[], void *d
 static MunitResult textValueJsonTest(const MunitParameter params[], void *data) {
     {
         char jsonBuffer[128] = {0};
-        strcpy(jsonBuffer, "{\"a\":\"\tThis text: \\\"Hello\\\".\n\"}");
+        strcpy(jsonBuffer, "{       \"a\":\"\tThis text: \\\"Hello\\\".\n\"}");
         JSONTokener jsonTokener = getJSONTokener(jsonBuffer, strlen(jsonBuffer));
         JSONObject jsonObject = jsonObjectParse(&jsonTokener);
         assert_true(isJsonObjectOk(&jsonObject));
@@ -359,6 +364,16 @@ static MunitResult parseJsonOptTest(const MunitParameter params[], void *data) {
 }
 
 static MunitResult parseJsonArrayTest(const MunitParameter params[], void *data) {
+    {
+        char jsonBuffer[128] = {0};
+        strcpy(jsonBuffer, "(\"one\", 2, 3.33, null, 45677889900, true, [false, 12, \"text\"], {}]");
+        JSONTokener jsonTokener = getJSONTokener(jsonBuffer, strlen(jsonBuffer));
+        JSONArray jsonArray = jsonArrayParse(&jsonTokener);
+        assert_false(isJsonArrayOk(&jsonArray));
+        assert_true(jsonTokener.jsonStatus == JSON_ERROR_MISSING_START_PARENTHESIS);
+        deleteJSONArray(&jsonArray);
+    }
+
     char jsonBuffer[128] = {0};
     strcpy(jsonBuffer, "[\"one\", 2, 3.33, null, 45677889900, true, [false, 12, \"text\"], {}]");
 

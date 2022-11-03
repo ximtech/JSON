@@ -1,6 +1,8 @@
 # JSON
 
 [![tests](https://github.com/ximtech/JSON/actions/workflows/cmake-ci.yml/badge.svg)](https://github.com/ximtech/JSON/actions/workflows/cmake-ci.yml)
+[![codecov](https://codecov.io/gh/ximtech/JSON/branch/main/graph/badge.svg?token=0ScIsutp3U)](https://codecov.io/gh/ximtech/JSON)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/293fcd59c381460c99896911d3e5609c)](https://www.codacy.com/gh/ximtech/JSON/dashboard)
 
 Full feature library for parsing, editing and creating JSON strings. Written in C and suitable for embedded system.
 User-friendly interface and high level functions, provide easy manipulating with JSON.

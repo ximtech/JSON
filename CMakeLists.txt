@@ -6,13 +6,8 @@ set(CMAKE_C_STANDARD 99)
 include(cmake/CPM.cmake)
 
 CPMAddPackage(
-        NAME HashMap
-        GITHUB_REPOSITORY ximtech/HashMap
-        GIT_TAG origin/main)
-
-CPMAddPackage(
-        NAME Vector
-        GITHUB_REPOSITORY ximtech/Vector
+        NAME Collections
+        GITHUB_REPOSITORY ximtech/Collections
         GIT_TAG origin/main)
 
 set(SOURCE_FILES

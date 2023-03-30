@@ -21,8 +21,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
 
-target_link_libraries(${PROJECT_NAME} HashMap)
-target_link_libraries(${PROJECT_NAME} Vector)
+target_link_libraries(${PROJECT_NAME} Collections)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/include/${PROJECT_NAME}.h
         DESTINATION ${CMAKE_INSTALL_PREFIX}/include/${PROJECT_NAME})

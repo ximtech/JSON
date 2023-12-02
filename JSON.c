@@ -759,7 +759,7 @@ static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength) {
         endPointer = NULL;
         int32_t intNumber = strtol(jsonTextValue, &endPointer, 10);     // try to parse decimal number
         if (isJsonIntegerValid(intNumber, jsonTextValue, endPointer)) {
-            if ((intNumber != 0 || valueLength == 1) && endPointer == NULL) {   // check that 0 value is not an error and also no additional chars
+            if ((intNumber != 0 || valueLength == 1) && !isalpha((int) *endPointer)) {   // check that 0 value is not an error and also no additional chars
                 return JSON_INTEGER;
             }
         }
@@ -768,7 +768,7 @@ static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength) {
         endPointer = NULL;
         int64_t longNumber = strtoll(jsonTextValue, &endPointer, 10);
         if (isJsonLongValid(longNumber, jsonTextValue, endPointer)) {
-            if ((longNumber != 0 || valueLength == 1) && endPointer == NULL) {
+            if ((longNumber != 0 || valueLength == 1) && !isalpha((int) *endPointer)) {
                 return JSON_LONG;
             }
         }

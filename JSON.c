@@ -56,24 +56,40 @@ static inline void terminateJsonString(JSONTokener *jsonTokener) {
     *jsonTokener->jsonStringEnd = JSON_NULL_CHAR;
 }
 
-static inline bool isJsonIntegerValid(int32_t number, const char *valuePointer, const char *endPointer) {
+static inline bool isValidParsedLength(const char *valuePointer, const char *endPointer, uint32_t valueLength) {
+    return endPointer == NULL || *endPointer == '\0' || endPointer - valuePointer == valueLength;
+}
+
+static inline bool isJsonIntegerValid(int32_t number,
+                                      const char *valuePointer,
+                                      const char *endPointer,
+                                      uint32_t expectedValueLength) {
     return (valuePointer == endPointer) ||              // no digits found
            (errno == ERANGE && number == LONG_MIN) ||   // underflow occurred
-           (errno == ERANGE && number == LONG_MAX)      // overflow occurred
+           (errno == ERANGE && number == LONG_MAX) ||   // overflow occurred
+           !isValidParsedLength(valuePointer, endPointer, expectedValueLength)
            ? false : true;
 }
 
-static inline bool isJsonLongValid(int64_t number, const char *valuePointer, const char *endPointer) {
-    return (valuePointer == endPointer) ||              // no digits found
+static inline bool isJsonLongValid(int64_t number,
+                                   const char *valuePointer,
+                                   const char *endPointer,
+                                   uint32_t expectedValueLength) {
+    return (valuePointer == endPointer) ||               // no digits found
            (errno == ERANGE && number == LLONG_MIN) ||   // underflow occurred
-           (errno == ERANGE && number == LLONG_MAX)      // overflow occurred
+           (errno == ERANGE && number == LLONG_MAX) ||   // overflow occurred
+           !isValidParsedLength(valuePointer, endPointer, expectedValueLength)
            ? false : true;
 }
 
-static inline bool isJsonDoubleNumberValid(double number, const char *valuePointer, const char *endPointer) {
+static inline bool isJsonDoubleNumberValid(double number,
+                                           const char *valuePointer,
+                                           const char *endPointer,
+                                           uint32_t expectedValueLength) {
     return (valuePointer == endPointer) ||             // no digits found
            (errno == ERANGE && number == DBL_MIN) ||   // underflow occurred
-           (errno == ERANGE && number == DBL_MAX)      // overflow occurred
+           (errno == ERANGE && number == DBL_MAX) ||   // overflow occurred
+           !isValidParsedLength(valuePointer, endPointer, expectedValueLength)
            ? false : true;
 }
 
@@ -748,7 +764,7 @@ static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength) {
         char *endPointer = NULL;
         if (isDoubleValue) {
             double doubleNumber = strtod(jsonTextValue, &endPointer);   // try to parse double number
-            if (isJsonDoubleNumberValid(doubleNumber, jsonTextValue, endPointer)) {
+            if (isJsonDoubleNumberValid(doubleNumber, jsonTextValue, endPointer, valueLength)) {
                 if (doubleNumber != 0 || valueLength == 1) {
                     return JSON_DOUBLE;
                 }
@@ -758,8 +774,8 @@ static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength) {
         errno = 0;
         endPointer = NULL;
         int32_t intNumber = strtol(jsonTextValue, &endPointer, 10);     // try to parse decimal number
-        if (isJsonIntegerValid(intNumber, jsonTextValue, endPointer)) {
-            if ((intNumber != 0 || valueLength == 1) && !isalpha((int) *endPointer)) {   // check that 0 value is not an error and also no additional chars
+        if (isJsonIntegerValid(intNumber, jsonTextValue, endPointer, valueLength)) {
+            if (intNumber != 0 || valueLength == 1) {   // check that 0 value is not an error and also no additional chars
                 return JSON_INTEGER;
             }
         }
@@ -767,8 +783,8 @@ static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength) {
         errno = 0;
         endPointer = NULL;
         int64_t longNumber = strtoll(jsonTextValue, &endPointer, 10);
-        if (isJsonLongValid(longNumber, jsonTextValue, endPointer)) {
-            if ((longNumber != 0 || valueLength == 1) && !isalpha((int) *endPointer)) {
+        if (isJsonLongValid(longNumber, jsonTextValue, endPointer, valueLength)) {
+            if (longNumber != 0 || valueLength == 1) {
                 return JSON_LONG;
             }
         }

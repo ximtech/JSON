@@ -86,11 +86,12 @@ static MunitResult createJsonArrayTest(const MunitParameter params[], void *data
     JSONObject innerObject = createJsonObject(&innerArrayTokener);
     jsonObjectPut(&innerObject, "key1", "12345");
     jsonObjectPut(&innerObject, "key2", "256MB");
+    jsonObjectPut(&innerObject, "key3", "6462150918:AAGGejPL9-F0CONZy2dwCn_uET96tYjQDA4");
     jsonArrayAddObject(&jsonArray, &innerObject);
 
     char resBuffer[256] = {0};
     jsonArrayToString(&jsonArray, resBuffer);
-    assert_string_equal("[\"text\",12.22,222,true,null,234123423543,[1,2,3],{\"key1\":12345,\"key2\":\"256MB\"}]", resBuffer);
+    assert_string_equal("[\"text\",12.22,222,true,null,234123423543,[1,2,3],{\"key1\":12345,\"key2\":\"256MB\",\"key3\":\"6462150918:AAGGejPL9-F0CONZy2dwCn_uET96tYjQDA4\"}]", resBuffer);
 
     deleteJSONArray(&jsonArray);
     return MUNIT_OK;

@@ -982,7 +982,7 @@ static void appendJsonValueCompact(InnerJsonBuffer *jsonBuffer, JSONValue *jsonV
 }
 
 static void jsonBufferCatStr(InnerJsonBuffer *jsonBuffer, const char *str) {
-    uint32_t length = strlen(str);
+    uint32_t length = strnlen(str, jsonBuffer->capacity + 1);
     if (length >= (jsonBuffer->capacity - jsonBuffer->length)) return;
     memcpy(jsonBuffer->buffer + jsonBuffer->length, str, length);
     jsonBuffer->length += length;

@@ -150,7 +150,7 @@ target_link_libraries(${PROJECT_NAME}.elf JSON)
     jsonObjectAddArray(&rootObject, "values", &jsonArray);  // attach array to root object
 
     char resBuffer[128] = {0};
-    jsonObjectToStringPretty(&rootObject, resBuffer, 3, 0);   // set pretty print with idents - 3, and root level - 0
+    jsonObjectToStringPretty(&rootObject, resBuffer, 128, 3, 0);   // buffer size and pretty print with idents - 3, and root level - 0
     printf("%s", resBuffer);
 
         /* Result: {
@@ -193,7 +193,7 @@ target_link_libraries(${PROJECT_NAME}.elf JSON)
     jsonObjectAddArray(&rootObject, "innerArray", &innerArray); // attach to root
 
     char buffer[512] = {0};
-    jsonObjectToStringPretty(&rootObject, buffer, 3, 0);    // for compact json string, use jsonObjectToString()
+    jsonObjectToStringPretty(&rootObject, buffer, 512, 3, 0);    // for compact json string, use jsonObjectToString()
 
     printf("%s", buffer); // Result:
         /*{

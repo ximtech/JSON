@@ -21,6 +21,11 @@
 #define JSON_NEXT_VALUE_COMMA_CHAR       ','
 #define JSON_NEXT_VALUE_SEMICOLON_CHAR   ';'
 
+typedef struct InnerJsonBuffer {
+    char *buffer;
+    uint32_t length;
+    uint32_t capacity;
+} InnerJsonBuffer;
 
 static char nextJsonChar(JSONTokener *jsonTokener);
 static void backJsonChar(JSONTokener *jsonTokener);
@@ -37,13 +42,14 @@ static inline bool isNotEscapedCharArray(char jsonChar);
 static JSONType detectJsonValueType(char *jsonTextValue, uint32_t valueLength);
 static JSONValue *getValueInstance(JSONTokener *jsonTokener, JSONType type, void *value);
 
-static void jsonHashMapToString(HashMap jsonMap, char *jsonString, uint16_t indentFactor, uint16_t topLevelIndent);
-static void jsonVectorToString(Vector jsonVector, char *jsonString, uint16_t indentFactor, uint16_t topLevelIndent);
-static void jsonHashMapToStringCompact(HashMap jsonMap, char *jsonString);
-static void jsonVectorToStringCompact(Vector jsonVector, char *jsonString);
-static void quoteJsonString(char *jsonString, const char *value);
-static void appendJsonValue(char *jsonString, JSONValue *jsonValue, uint16_t indentFactor, uint16_t topLevelIndent);
-static void appendJsonValueCompact(char *jsonString, JSONValue *jsonValue);
+static void jsonHashMapToString(HashMap jsonMap, InnerJsonBuffer *jsonBuffer, uint16_t indentFactor, uint16_t topLevelIndent);
+static void jsonVectorToString(Vector jsonVector, InnerJsonBuffer *jsonBuffer, uint16_t indentFactor, uint16_t topLevelIndent);
+static void jsonHashMapToStringCompact(HashMap jsonMap, InnerJsonBuffer *jsonBuffer);
+static void jsonVectorToStringCompact(Vector jsonVector, InnerJsonBuffer *jsonBuffer);
+static void quoteJsonString(InnerJsonBuffer *jsonBuffer, const char *value);
+static void appendJsonValue(InnerJsonBuffer *jsonBuffer, JSONValue *jsonValue, uint16_t indentFactor, uint16_t topLevelIndent);
+static void appendJsonValueCompact(InnerJsonBuffer *jsonBuffer, JSONValue *jsonValue);
+static void jsonBufferCatStr(InnerJsonBuffer *jsonBuffer, const char *str);
 
 static void deleteJsonObject(HashMap jsonObjectMap);
 static void deleteJsonArray(Vector jsonVector);
@@ -519,24 +525,28 @@ void jsonArrayAddObject(JSONArray *jsonArray, JSONObject *innerObject) {
     }
 }
 
-void jsonObjectToStringPretty(JSONObject *jsonObject, char *resultBuffer, uint16_t indentFactor, uint16_t topLevelIndent) {
+void jsonObjectToStringPretty(JSONObject *jsonObject, char *resultBuffer, uint32_t bufferSize, uint16_t indentFactor, uint16_t topLevelIndent) {
     if (jsonObject == NULL || resultBuffer == NULL) return;
-    jsonHashMapToString(jsonObject->jsonMap, resultBuffer, indentFactor, topLevelIndent);
+    InnerJsonBuffer jsonBuffer = {.buffer = resultBuffer, .length = 0, .capacity = bufferSize};
+    jsonHashMapToString(jsonObject->jsonMap, &jsonBuffer, indentFactor, topLevelIndent);
 }
 
-void jsonArrayToStringPretty(JSONArray *jsonArray, char *resultBuffer, uint16_t indentFactor, uint16_t topLevelIndent) {
+void jsonArrayToStringPretty(JSONArray *jsonArray, char *resultBuffer, uint32_t bufferSize, uint16_t indentFactor, uint16_t topLevelIndent) {
     if (jsonArray == NULL || resultBuffer == NULL) return;
-    jsonVectorToString(jsonArray->jsonVector, resultBuffer, indentFactor, topLevelIndent);
+    InnerJsonBuffer jsonBuffer = {.buffer = resultBuffer, .length = 0, .capacity = bufferSize};
+    jsonVectorToString(jsonArray->jsonVector, &jsonBuffer, indentFactor, topLevelIndent);
 }
 
-void jsonObjectToString(JSONObject *jsonObject, char *resultBuffer) {
+void jsonObjectToString(JSONObject *jsonObject, char *resultBuffer, uint32_t bufferSize) {
     if (jsonObject == NULL || resultBuffer == NULL) return;
-    jsonHashMapToStringCompact(jsonObject->jsonMap, resultBuffer);
+    InnerJsonBuffer jsonBuffer = {.buffer = resultBuffer, .length = 0, .capacity = bufferSize};
+    jsonHashMapToStringCompact(jsonObject->jsonMap, &jsonBuffer);
 }
 
-void jsonArrayToString(JSONArray *jsonArray, char *resultBuffer) {
+void jsonArrayToString(JSONArray *jsonArray, char *resultBuffer, uint32_t bufferSize) {
     if (jsonArray == NULL || resultBuffer == NULL) return;
-    jsonVectorToStringCompact(jsonArray->jsonVector, resultBuffer);
+    InnerJsonBuffer jsonBuffer = {.buffer = resultBuffer, .length = 0, .capacity = bufferSize};
+    jsonVectorToStringCompact(jsonArray->jsonVector, &jsonBuffer);
 }
 
 void deleteJSONObject(JSONObject *jsonObject) {
@@ -804,22 +814,22 @@ static JSONValue *getValueInstance(JSONTokener *jsonTokener, JSONType type, void
     return NULL;
 }
 
-static void jsonHashMapToString(HashMap jsonMap, char *jsonString, uint16_t indentFactor, uint16_t topLevelIndent) {
+static void jsonHashMapToString(HashMap jsonMap, InnerJsonBuffer *jsonBuffer, uint16_t indentFactor, uint16_t topLevelIndent) {
     uint32_t objectLength = getHashMapSize(jsonMap);
     if (objectLength == 0) {
-        strcpy(jsonString, "{}");
+        jsonBufferCatStr(jsonBuffer, "{}");
         return;
     }
     uint16_t totalIndent = indentFactor + topLevelIndent;
 
-    strcat(jsonString, "{");
+    jsonBufferCatStr(jsonBuffer, "{");
     if (objectLength == 1) {
         HashMapIterator iterator = getHashMapIterator(jsonMap);
         hashMapHasNext(&iterator);
         JSONValue *jsonValue = iterator.value;
-        quoteJsonString(jsonString, iterator.key);
-        strcat(jsonString, ": ");
-        appendJsonValue(jsonString, jsonValue, indentFactor, 0);
+        quoteJsonString(jsonBuffer, iterator.key);
+        jsonBufferCatStr(jsonBuffer, ": ");
+        appendJsonValue(jsonBuffer, jsonValue, indentFactor, 0);
 
     } else {
         uint32_t rowCounter = 0;
@@ -828,147 +838,155 @@ static void jsonHashMapToString(HashMap jsonMap, char *jsonString, uint16_t inde
             rowCounter++;
 
             if (rowCounter > 1) {
-                strcat(jsonString, ",\n");
+                jsonBufferCatStr(jsonBuffer, ",\n");
             } else {
-                strcat(jsonString, "\n");
+                jsonBufferCatStr(jsonBuffer, "\n");
             }
 
             for (uint16_t i = 0; i < totalIndent; i++) {
-                strcat(jsonString, " ");
+                jsonBufferCatStr(jsonBuffer, " ");
             }
-            quoteJsonString(jsonString, iterator.key);
-            strcat(jsonString, ": ");
+            quoteJsonString(jsonBuffer, iterator.key);
+            jsonBufferCatStr(jsonBuffer, ": ");
             JSONValue *jsonValue = iterator.value;
-            appendJsonValue(jsonString, jsonValue, indentFactor, totalIndent);
+            appendJsonValue(jsonBuffer, jsonValue, indentFactor, totalIndent);
         }
 
         if (rowCounter > 1) {
-            strcat(jsonString, "\n");
+            jsonBufferCatStr(jsonBuffer, "\n");
             for (uint16_t i = 0; i < topLevelIndent; i++) {
-                strcat(jsonString, " ");
+                jsonBufferCatStr(jsonBuffer, " ");
             }
         }
     }
-    strcat(jsonString, "}");
+    jsonBufferCatStr(jsonBuffer, "}");
 }
 
-static void jsonVectorToString(Vector jsonVector, char *jsonString, uint16_t indentFactor, uint16_t topLevelIndent) {
+static void jsonVectorToString(Vector jsonVector, InnerJsonBuffer *jsonBuffer, uint16_t indentFactor, uint16_t topLevelIndent) {
     uint32_t arrayLength = getVectorSize(jsonVector);
     if (arrayLength == 0) {
-        strcpy(jsonString, "[]");
+        jsonBufferCatStr(jsonBuffer, "[]");
         return;
     }
 
-    strcat(jsonString, "[");
+    jsonBufferCatStr(jsonBuffer, "[");
     if (arrayLength == 1) {
         JSONValue *jsonValue = vectorGet(jsonVector, 0);
-        appendJsonValue(jsonString, jsonValue, indentFactor, topLevelIndent);
+        appendJsonValue(jsonBuffer, jsonValue, indentFactor, topLevelIndent);
 
     } else {
 
         uint16_t totalIndent = indentFactor + topLevelIndent;
-        strcat(jsonString, "\n");
+        jsonBufferCatStr(jsonBuffer, "\n");
         for (uint32_t i = 0; i < arrayLength; i++) {
             if (i > 0) {
-                strcat(jsonString, ",\n");
+                jsonBufferCatStr(jsonBuffer, ",\n");
             }
 
             for (uint16_t j = 0; j < totalIndent; j++) {
-                strcat(jsonString, " ");
+                jsonBufferCatStr(jsonBuffer, " ");
             }
             JSONValue *jsonValue = vectorGet(jsonVector, i);
-            appendJsonValue(jsonString, jsonValue, indentFactor, topLevelIndent);
+            appendJsonValue(jsonBuffer, jsonValue, indentFactor, topLevelIndent);
         }
 
-        strcat(jsonString, "\n");
+        jsonBufferCatStr(jsonBuffer, "\n");
         for (uint16_t i = 0; i < topLevelIndent; i++) {
-            strcat(jsonString, " ");
+            jsonBufferCatStr(jsonBuffer, " ");
         }
     }
-    strcat(jsonString, "]");
+    jsonBufferCatStr(jsonBuffer, "]");
 }
 
-static void jsonHashMapToStringCompact(HashMap jsonMap, char *jsonString) {
-    strcat(jsonString, "{");
+static void jsonHashMapToStringCompact(HashMap jsonMap, InnerJsonBuffer *jsonBuffer) {
+    jsonBufferCatStr(jsonBuffer, "{");
 
     uint32_t rowCounter = 0;
     HashMapIterator iterator = getHashMapIterator(jsonMap);
     while (hashMapHasNext(&iterator)) {
         rowCounter++;
         if (rowCounter > 1) {
-            strcat(jsonString, ",");
+            jsonBufferCatStr(jsonBuffer, ",");
         }
 
-        quoteJsonString(jsonString, iterator.key);
-        strcat(jsonString, ":");
+        quoteJsonString(jsonBuffer, iterator.key);
+        jsonBufferCatStr(jsonBuffer, ":");
         JSONValue *jsonValue = iterator.value;
-        appendJsonValueCompact(jsonString, jsonValue);
+        appendJsonValueCompact(jsonBuffer, jsonValue);
     }
-    strcat(jsonString, "}");
+    jsonBufferCatStr(jsonBuffer, "}");
 }
 
-static void jsonVectorToStringCompact(Vector jsonVector, char *jsonString) {
-    strcat(jsonString, "[");
+static void jsonVectorToStringCompact(Vector jsonVector, InnerJsonBuffer *jsonBuffer) {
+    jsonBufferCatStr(jsonBuffer, "[");
     for (uint32_t i = 0; i < getVectorSize(jsonVector); i++) {
         if (i > 0) {
-            strcat(jsonString, ",");
+            jsonBufferCatStr(jsonBuffer, ",");
         }
         JSONValue *jsonValue = vectorGet(jsonVector, i);
-        appendJsonValueCompact(jsonString, jsonValue);
+        appendJsonValueCompact(jsonBuffer, jsonValue);
     }
-    strcat(jsonString, "]");
+    jsonBufferCatStr(jsonBuffer, "]");
 }
 
-static void quoteJsonString(char *jsonString, const char *value) {
-    strcat(jsonString, "\"");
-    strcat(jsonString, value);
-    strcat(jsonString, "\"");
+static void quoteJsonString(InnerJsonBuffer *jsonBuffer, const char *value) {
+    jsonBufferCatStr(jsonBuffer, "\"");
+    jsonBufferCatStr(jsonBuffer, value);
+    jsonBufferCatStr(jsonBuffer, "\"");
 }
 
-static void appendJsonValue(char *jsonString, JSONValue *jsonValue, uint16_t indentFactor, uint16_t topLevelIndent) {
+static void appendJsonValue(InnerJsonBuffer *jsonBuffer, JSONValue *jsonValue, uint16_t indentFactor, uint16_t topLevelIndent) {
     switch (jsonValue->type) {
         case JSON_OBJECT:
-            jsonHashMapToString((HashMap) jsonValue->value, jsonString, indentFactor, topLevelIndent);
+            jsonHashMapToString((HashMap) jsonValue->value, jsonBuffer, indentFactor, topLevelIndent);
             break;
         case JSON_ARRAY:
-            jsonVectorToString((Vector) jsonValue->value, jsonString, indentFactor, topLevelIndent);
+            jsonVectorToString((Vector) jsonValue->value, jsonBuffer, indentFactor, topLevelIndent);
             break;
         case JSON_BOOLEAN:
         case JSON_INTEGER:
         case JSON_DOUBLE:
         case JSON_LONG:
         case JSON_NULL:
-            strcat(jsonString, jsonValue->value);
+            jsonBufferCatStr(jsonBuffer, jsonValue->value);
             break;
         case JSON_TEXT:
-            quoteJsonString(jsonString, jsonValue->value);
+            quoteJsonString(jsonBuffer, jsonValue->value);
             break;
         default:
             return;
     }
 }
 
-static void appendJsonValueCompact(char *jsonString, JSONValue *jsonValue) {
+static void appendJsonValueCompact(InnerJsonBuffer *jsonBuffer, JSONValue *jsonValue) {
     switch (jsonValue->type) {
         case JSON_OBJECT:
-            jsonHashMapToStringCompact((HashMap) jsonValue->value, jsonString);
+            jsonHashMapToStringCompact((HashMap) jsonValue->value, jsonBuffer);
             break;
         case JSON_ARRAY:
-            jsonVectorToStringCompact((Vector) jsonValue->value, jsonString);
+            jsonVectorToStringCompact((Vector) jsonValue->value, jsonBuffer);
             break;
         case JSON_BOOLEAN:
         case JSON_INTEGER:
         case JSON_DOUBLE:
         case JSON_LONG:
         case JSON_NULL:
-            strcat(jsonString, jsonValue->value);
+            jsonBufferCatStr(jsonBuffer, jsonValue->value);
             break;
         case JSON_TEXT:
-            quoteJsonString(jsonString, jsonValue->value);
+            quoteJsonString(jsonBuffer, jsonValue->value);
             break;
         default:
             return;
     }
+}
+
+static void jsonBufferCatStr(InnerJsonBuffer *jsonBuffer, const char *str) {
+    uint32_t length = strlen(str);
+    if (length >= (jsonBuffer->capacity - jsonBuffer->length)) return;
+    memcpy(jsonBuffer->buffer + jsonBuffer->length, str, length);
+    jsonBuffer->length += length;
+    jsonBuffer->buffer[jsonBuffer->length] = '\0';
 }
 
 static void deleteJsonObject(HashMap jsonObjectMap) {

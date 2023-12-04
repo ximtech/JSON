@@ -25,8 +25,8 @@ static MunitResult createJsonObjectTest(const MunitParameter params[], void *dat
     jsonObjectAddObject(&jsonObject, "innerObject", &innerObject);
     jsonObjectAddArray(&jsonObject, "innerArray", &jsonArray);
 
-    char resBuffer[256] = {0};
-    jsonObjectToStringPretty(&jsonObject, resBuffer, 3, 0);
+    char resBuffer[512] = {0};
+    jsonObjectToStringPretty(&jsonObject, resBuffer, ARRAY_SIZE(resBuffer), 3, 0);
     assert_string_equal("{\n"
                         "   \"innerObject\": {\n"
                         "      \"innerKey2\": true,\n"
@@ -45,8 +45,8 @@ static MunitResult createJsonObjectTest(const MunitParameter params[], void *dat
                         "   \"key3\": false\n"
                         "}", resBuffer);
 
-    memset(resBuffer, 0, 256);
-    jsonObjectToString(&jsonObject, resBuffer);
+    memset(resBuffer, 0, ARRAY_SIZE(resBuffer));
+    jsonObjectToString(&jsonObject, resBuffer, ARRAY_SIZE(resBuffer));
     assert_string_equal(
             "{\"innerObject\":"
             "{\"innerKey2\":true,"
@@ -59,6 +59,11 @@ static MunitResult createJsonObjectTest(const MunitParameter params[], void *dat
             "\"key2\":null,"
             "\"key3\":false}",
             resBuffer);
+
+    // Overflow test
+    memset(resBuffer, 0, ARRAY_SIZE(resBuffer));
+    jsonObjectToString(&jsonObject, resBuffer, 32);
+    assert_string_equal("{\"innerObject\":{\"innerKey2\":,\"\"", resBuffer);
 
     deleteJSONObject(&jsonObject);
     return MUNIT_OK;
@@ -90,7 +95,7 @@ static MunitResult createJsonArrayTest(const MunitParameter params[], void *data
     jsonArrayAddObject(&jsonArray, &innerObject);
 
     char resBuffer[256] = {0};
-    jsonArrayToString(&jsonArray, resBuffer);
+    jsonArrayToString(&jsonArray, resBuffer, ARRAY_SIZE(resBuffer));
     assert_string_equal("[\"text\",12.22,222,true,null,234123423543,[1,2,3],{\"key1\":12345,\"key2\":\"256MB\",\"key3\":\"123456789:AAGGejPL9-eeeGGGRfgsf_aaabbbsssttrRRR\"}]", resBuffer);
 
     deleteJSONArray(&jsonArray);

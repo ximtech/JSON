@@ -47,7 +47,7 @@ static MunitResult updateJsonObjectTest(const MunitParameter params[], void *dat
 
     // Validate updated JSON
     char resBuffer[512] = {0};
-    jsonObjectToStringPretty(&jsonObject, resBuffer, 3, 0);
+    jsonObjectToStringPretty(&jsonObject, resBuffer, ARRAY_SIZE(resBuffer), 3, 0);
     JSONTokener checkTokener = getJSONTokener(resBuffer, strlen(resBuffer));
     JSONObject checkObject = jsonObjectParse(&checkTokener);
     assert_true(isJsonObjectOk(&checkObject));
@@ -127,7 +127,7 @@ static MunitResult updateJsonArrayTest(const MunitParameter params[], void *data
 
     // Validate updated JSON
     char resBuffer[256] = {0};
-    jsonArrayToStringPretty(&jsonArray, resBuffer, 3, 0);
+    jsonArrayToStringPretty(&jsonArray, resBuffer, ARRAY_SIZE(resBuffer), 3, 0);
     assert_string_equal("[\n"
                         "   123,\n"
                         "   \"text value\",\n"

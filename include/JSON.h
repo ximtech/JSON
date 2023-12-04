@@ -129,12 +129,12 @@ void jsonArrayAddObject(JSONArray *jsonArray, JSONObject *innerObject);
  *        topLevelIndent – The indentation of the top level.
 * Returns: a printable, displayable, transmittable representation of the object, beginning with '{'(left brace) and ending with '}'(right brace).
 */
-void jsonObjectToStringPretty(JSONObject *jsonObject, char *resultBuffer, uint16_t indentFactor, uint16_t topLevelIndent);
-void jsonArrayToStringPretty(JSONArray *jsonArray, char *resultBuffer, uint16_t indentFactor, uint16_t topLevelIndent);
+void jsonObjectToStringPretty(JSONObject *jsonObject, char *resultBuffer, uint32_t bufferSize, uint16_t indentFactor, uint16_t topLevelIndent);
+void jsonArrayToStringPretty(JSONArray *jsonArray, char *resultBuffer, uint32_t bufferSize, uint16_t indentFactor, uint16_t topLevelIndent);
 
 // Make an JSON text of this JSONObject. For compactness, no whitespace and new line is added.
-void jsonObjectToString(JSONObject *jsonObject, char *resultBuffer);
-void jsonArrayToString(JSONArray *jsonArray, char *resultBuffer);
+void jsonObjectToString(JSONObject *jsonObject, char *resultBuffer, uint32_t bufferSize);
+void jsonArrayToString(JSONArray *jsonArray, char *resultBuffer, uint32_t bufferSize);
 
 // JSON Delete
 void deleteJSONObject(JSONObject *jsonObject);
